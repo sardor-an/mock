@@ -79,9 +79,7 @@ class UserRequestApiView(APIView):
 
                     if warehouse['remainder'] == 0:
                         continue
-
                     
-                                
                     elif warehouse['remainder'] < we_need:
                         initial_remainder = warehouse['remainder']
                         we_need -= warehouse['remainder']
@@ -103,7 +101,7 @@ class UserRequestApiView(APIView):
                             'taken': initial_remainder,
                             'warehouse_id': warehouse['id'],
                             'left': warehouse['remainder'],
-                            'material': material.material.material_name
+                            'material': warehouse['material']
                         })
                     
                     elif warehouse['remainder'] > we_need:
@@ -124,7 +122,7 @@ class UserRequestApiView(APIView):
                             'taken': we_need,
                             'warehouse_id': warehouse['id'],
                             'left': warehouse['remainder'],
-                            'material': material.material.material_name
+                            'material': warehouse['material']
                         })
                         we_need = 0
 
@@ -146,7 +144,7 @@ class UserRequestApiView(APIView):
                             'taken': we_need,
                             'warehouse_id': warehouse['id'],
                             'left': warehouse['remainder'],
-                            'material': material.material.material_name
+                            'material': warehouse['material']
                         })
                         we_need = 0
 
