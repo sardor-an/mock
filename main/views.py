@@ -42,7 +42,7 @@ class UserRequestApiView(APIView):
     permission_classes = [AllowAny]
         
     def post(self, request: Request, *args, **kwargs):
-        
+
         result = []
         state = []
 
@@ -62,12 +62,9 @@ class UserRequestApiView(APIView):
             for material in materials:
                 quantity = float(material.quantity) * float(serializer.validated_data['quantity'])
                 we_need = quantity
-                warehouses = WareHouseSerializer(
-                    instance = WareHouse.objects.filter(material=material.material), # be careful here
-                    many=True
-                )
+                warehouses = WareHouseSerializer(instance = WareHouse.objects.filter(material=material.material), many=True)
                 for warehouse in warehouses.data:
-
+                    initial_remainder = warehouse['remainder']
                     if state:
                         for data in state:
                             if warehouse['id'] == data['warehouse_id'] and warehouse['material'] == data['material']:
@@ -81,73 +78,31 @@ class UserRequestApiView(APIView):
                         continue
                     
                     elif warehouse['remainder'] < we_need:
-                        initial_remainder = warehouse['remainder']
                         we_need -= warehouse['remainder']
-                        
-                        result[-1]['materials'].append({
-                            'warehouse_id': warehouse['id'],
-                            'material': warehouse['material'],
-                            'quantity': warehouse['remainder'],
-                            'price': warehouse['price']
-                        })
-
+                        quantity_taken =  warehouse['remainder']
                         warehouse['remainder'] = 0
-
-                        state.append({
-                            'status': 'LESS',
-                            'we_needed': quantity,
-                            'we_need_now': we_need,
-                            'had_left': initial_remainder,
-                            'taken': initial_remainder,
-                            'warehouse_id': warehouse['id'],
-                            'left': warehouse['remainder'],
-                            'material': warehouse['material']
-                        })
                     
-                    elif warehouse['remainder'] > we_need:
-                        initial_remainder = warehouse['remainder']
+                    elif warehouse['remainder'] >= we_need:
                         warehouse['remainder'] -= we_need
-                        
-                        result[-1]['materials'].append({
+                        quantity_taken = we_need
+                        we_need = 0
+
+
+                    result[-1]['materials'].append({
                             'warehouse_id': warehouse['id'],
                             'material': warehouse['material'],
-                            'quantity': we_need,
+                            'quantity': quantity_taken,
                             'price': warehouse['price']
                         })
-                        state.append({
-                            'status': 'MORE',
+                    state.append({
                             'we_needed': quantity,
                             'we_need_now': we_need,
                             'had_left': initial_remainder,
-                            'taken': we_need,
+                            'taken': quantity_taken,
                             'warehouse_id': warehouse['id'],
                             'left': warehouse['remainder'],
                             'material': warehouse['material']
                         })
-                        we_need = 0
-
-                    elif warehouse['remainder'] == we_need:
-                        initial_remainder = warehouse['remainder']
-                        warehouse['remainder'] = 0
-                        
-                        result[-1]['materials'].append({
-                            'warehouse_id': warehouse['id'],
-                            'material': warehouse['material'],
-                            'quantity': we_need,
-                            'price': warehouse['price']
-                        })
-                        state.append({
-                            'status': 'EQUAL',
-                            'we_needed': quantity,
-                            'we_need_now': we_need,
-                            'had_left': initial_remainder,
-                            'taken': we_need,
-                            'warehouse_id': warehouse['id'],
-                            'left': warehouse['remainder'],
-                            'material': warehouse['material']
-                        })
-                        we_need = 0
-
             
                 if we_need > 0:
                     result[-1]['materials'].append({
