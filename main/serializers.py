@@ -36,27 +36,31 @@ class ProductMaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductMaterial
         fields = (
-            'product', # actually we return id, and check if serializer transforms it
+            'product',
             'material',
             'quantity'
         )
 
-    # def validate(self, attrs):
-    #     attrs['quantity'] = None
-    #     return super().validate(attrs)
 
     def create(self, validated_data):
-        code = validated_data['product']
+        pk_product = validated_data['product']
+        pk_material = validated_data['material']
 
-        product = Product.objects.filter(product_code=code)
-        
+        product = Product.objects.filter(pk=pk_product)
+        material = Material.objects.filter(pk=pk_material)
         if not product.exists():
             raise serializers.ValidationError({
                 'success': False,
                 'message': 'Product not found with this code'
             })
+        if not material.exists():
+            raise serializers.ValidationError({
+                'success': False,
+                'message': 'Material not found with this pk'
+            })
         
         validated_data['product'] = product.first()
+        validated_data['material'] = material.first()
 
         return super().create(validated_data)
 
@@ -71,11 +75,19 @@ class WareHouseSerializer(serializers.ModelSerializer):
             'remainder',
             'price'
         )
-    
-    # def validate(self, attrs):
-    #     material = 
-    #     return super().validate(attrs)
+    def create(self, validated_data):
+        pk_material = validated_data['material']
 
+        material = Material.objects.filter(pk=pk_material)
+        
+        if not material.exists():
+            raise serializers.ValidationError({
+                'success': False,
+                'message': 'Material not found with this pk'
+            })
+        validated_data['material'] = material.first()
+
+        return super().create(validated_data)
     
 
 class UserRequestSerializer(serializers.Serializer):
